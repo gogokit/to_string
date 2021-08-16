@@ -33,71 +33,211 @@ func TestFmt(t *testing.T) {
 		cs.StructSlice2 = cs.StructSlice1[1:]
 		cs.StructSlice3 = []CommonStruct{}
 
-		Convey("test_no_type_info", func() {
+		Convey("test_NoTypesInfo", func() {
 			const loopCnt = 1000
 			const expectStr = `{
-			    IntSlice1:$Obj1(0-9),
-			    IntSlice2:nil,
-				IntSlice3:$Obj1(2-4),
-				StructSlice1:$Obj2(0-2),
-				StructSlice2:$Obj2(1-2),
-				StructSlice3:[],
-				IntPtr:1,
-				Map:<Obj3>{
-			            1:2
-				}
-			},
-			{
-				<Obj1>:[
-					1(0),
-					2,
-					3(2),
-					4,
-					5(4),
-					6,
-					7,
-					8,
-					9,
-					10(9)
-				],
-				<Obj2>:[
-					{
-						IntSlice1:$Obj1(0-9),
-						IntSlice2:nil,
-						IntSlice3:$Obj1(2-4),
-						StructSlice1:nil,
-						StructSlice2:nil,
-						StructSlice3:nil,
-						IntPtr:1,
-						Map:$Obj3
-					}(0),
-					{
-						IntSlice1:$Obj1(0-9),
-						IntSlice2:nil,
-						IntSlice3:$Obj1(2-4),
-						StructSlice1:nil,
-						StructSlice2:nil,
-						StructSlice3:nil,
-						IntPtr:1,
-						Map:$Obj3
-					}(1),
-					{
-						IntSlice1:$Obj1(0-9),
-						IntSlice2:nil,
-						IntSlice3:$Obj1(2-4),
-						StructSlice1:nil,
-						StructSlice2:nil,
-						StructSlice3:nil,
-						IntPtr:1,
-						Map:$Obj3
-					}(2)
-				]
-			}`
+    IntSlice1:$Obj1(0-9),
+    IntSlice2:nil,
+    IntSlice3:$Obj1(2-4),
+    StructSlice1:$Obj2(0-2),
+    StructSlice2:$Obj2(1-2),
+    StructSlice3:[],
+    IntPtr:1,
+    Map:<Obj3>{
+        1:2
+    }
+},
+{
+    <Obj1>:[
+        1(0),
+        2,
+        3(2),
+        4,
+        5(4),
+        6,
+        7,
+        8,
+        9,
+        10(9)
+    ],
+    <Obj2>:[
+        {
+            IntSlice1:$Obj1(0-9),
+            IntSlice2:nil,
+            IntSlice3:$Obj1(2-4),
+            StructSlice1:nil,
+            StructSlice2:nil,
+            StructSlice3:nil,
+            IntPtr:1,
+            Map:$Obj3
+        }(0),
+        {
+            IntSlice1:$Obj1(0-9),
+            IntSlice2:nil,
+            IntSlice3:$Obj1(2-4),
+            StructSlice1:nil,
+            StructSlice2:nil,
+            StructSlice3:nil,
+            IntPtr:1,
+            Map:$Obj3
+        }(1),
+        {
+            IntSlice1:$Obj1(0-9),
+            IntSlice2:nil,
+            IntSlice3:$Obj1(2-4),
+            StructSlice1:nil,
+            StructSlice2:nil,
+            StructSlice3:nil,
+            IntPtr:1,
+            Map:$Obj3
+        }(2)
+    ]
+}`
+
+			for i := 1; i <= loopCnt; i++ {
+				str, err := Fmt(StringByConf(cs, Config{
+					InformationLevel: NoTypesInfo,
+				}), 4)
+				So(err, ShouldEqual, nil)
+				So(str, ShouldEqual, expectStr)
+			}
+		})
+
+		Convey("test_NoBaseKindsInfoOnly", func() {
+			const loopCnt = 1000
+			const expectStr = `(to_string.CommonStruct){
+    IntSlice1:([]int)$Obj1(0-9),
+    IntSlice2:([]int)nil,
+    IntSlice3:([]int)$Obj1(2-4),
+    StructSlice1:([]to_string.CommonStruct)$Obj2(0-2),
+    StructSlice2:([]to_string.CommonStruct)$Obj2(1-2),
+    StructSlice3:([]to_string.CommonStruct)[],
+    IntPtr:(***int)1,
+    Map:(map[int]int)<Obj3>{
+        1:2
+    }
+},
+{
+    <Obj1>:([]int)[
+        1(0),
+        2,
+        3(2),
+        4,
+        5(4),
+        6,
+        7,
+        8,
+        9,
+        10(9)
+    ],
+    <Obj2>:([]to_string.CommonStruct)[
+        (to_string.CommonStruct){
+            IntSlice1:([]int)$Obj1(0-9),
+            IntSlice2:([]int)nil,
+            IntSlice3:([]int)$Obj1(2-4),
+            StructSlice1:([]to_string.CommonStruct)nil,
+            StructSlice2:([]to_string.CommonStruct)nil,
+            StructSlice3:([]to_string.CommonStruct)nil,
+            IntPtr:(***int)1,
+            Map:(map[int]int)$Obj3
+        }(0),
+        (to_string.CommonStruct){
+            IntSlice1:([]int)$Obj1(0-9),
+            IntSlice2:([]int)nil,
+            IntSlice3:([]int)$Obj1(2-4),
+            StructSlice1:([]to_string.CommonStruct)nil,
+            StructSlice2:([]to_string.CommonStruct)nil,
+            StructSlice3:([]to_string.CommonStruct)nil,
+            IntPtr:(***int)1,
+            Map:(map[int]int)$Obj3
+        }(1),
+        (to_string.CommonStruct){
+            IntSlice1:([]int)$Obj1(0-9),
+            IntSlice2:([]int)nil,
+            IntSlice3:([]int)$Obj1(2-4),
+            StructSlice1:([]to_string.CommonStruct)nil,
+            StructSlice2:([]to_string.CommonStruct)nil,
+            StructSlice3:([]to_string.CommonStruct)nil,
+            IntPtr:(***int)1,
+            Map:(map[int]int)$Obj3
+        }(2)
+    ]
+}`
 
 			for i := 1; i <= loopCnt; i++ {
 				str, err := Fmt(StringByConf(cs, Config{
 					InformationLevel: NoBaseKindsInfoOnly,
-				}), 2)
+				}), 4)
+				So(err, ShouldEqual, nil)
+				So(str, ShouldEqual, expectStr)
+			}
+		})
+
+		Convey("test_AllTypesInfo", func() {
+			const loopCnt = 1000
+			const expectStr = `(to_string.CommonStruct){
+    IntSlice1:([]int)$Obj1(0-9),
+    IntSlice2:([]int)nil,
+    IntSlice3:([]int)$Obj1(2-4),
+    StructSlice1:([]to_string.CommonStruct)$Obj2(0-2),
+    StructSlice2:([]to_string.CommonStruct)$Obj2(1-2),
+    StructSlice3:([]to_string.CommonStruct)[],
+    IntPtr:(***int)1,
+    Map:(map[int]int)<Obj3>{
+        (int)1:(int)2
+    }
+},
+{
+    <Obj1>:([]int)[
+        (int)1(0),
+        (int)2,
+        (int)3(2),
+        (int)4,
+        (int)5(4),
+        (int)6,
+        (int)7,
+        (int)8,
+        (int)9,
+        (int)10(9)
+    ],
+    <Obj2>:([]to_string.CommonStruct)[
+        (to_string.CommonStruct){
+            IntSlice1:([]int)$Obj1(0-9),
+            IntSlice2:([]int)nil,
+            IntSlice3:([]int)$Obj1(2-4),
+            StructSlice1:([]to_string.CommonStruct)nil,
+            StructSlice2:([]to_string.CommonStruct)nil,
+            StructSlice3:([]to_string.CommonStruct)nil,
+            IntPtr:(***int)1,
+            Map:(map[int]int)$Obj3
+        }(0),
+        (to_string.CommonStruct){
+            IntSlice1:([]int)$Obj1(0-9),
+            IntSlice2:([]int)nil,
+            IntSlice3:([]int)$Obj1(2-4),
+            StructSlice1:([]to_string.CommonStruct)nil,
+            StructSlice2:([]to_string.CommonStruct)nil,
+            StructSlice3:([]to_string.CommonStruct)nil,
+            IntPtr:(***int)1,
+            Map:(map[int]int)$Obj3
+        }(1),
+        (to_string.CommonStruct){
+            IntSlice1:([]int)$Obj1(0-9),
+            IntSlice2:([]int)nil,
+            IntSlice3:([]int)$Obj1(2-4),
+            StructSlice1:([]to_string.CommonStruct)nil,
+            StructSlice2:([]to_string.CommonStruct)nil,
+            StructSlice3:([]to_string.CommonStruct)nil,
+            IntPtr:(***int)1,
+            Map:(map[int]int)$Obj3
+        }(2)
+    ]
+}`
+
+			for i := 1; i <= loopCnt; i++ {
+				str, err := Fmt(StringByConf(cs, Config{
+					InformationLevel: AllTypesInfo,
+				}), 4)
 				So(err, ShouldEqual, nil)
 				So(str, ShouldEqual, expectStr)
 			}
