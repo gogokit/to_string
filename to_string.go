@@ -30,13 +30,16 @@ func StringByConf(obj interface{}, conf Config) (ret string) {
 		}
 	}
 
+	if conf.FastSpecifyToStringProbe != nil && conf.ToString == nil {
+		panic(fmt.Errorf("error: conf.FastSpecifyToStringProbe is not nil, but conf.ToString is nil"))
+	}
+
 	g := &graph{
 		visited:                make(map[object]uint64),
 		mapKeys:                make(map[object][]reflect.Value),
 		inDegreeMoreThan1Nodes: make(map[object]struct{}),
 		sliceElemInfo:          make(map[reflect.Type]map[uintptr]sliceElem),
 		slices:                 make(map[reflect.Type][]slice),
-		objStrs:                make(map[reflect.Value]string),
 		conf:                   conf,
 	}
 
@@ -76,15 +79,14 @@ type Config struct {
 	InformationLevel InformationLevel
 	// 返回true表示过滤掉field对应的结点, 也即不在对field对应的结点递归访问
 	FilterStructField []func(obj reflect.Value, fieldIdx int) (hitFilter bool)
-	// ToString(obj)返回的objStr不为nil时使用*objStr作为obj的字符串呈现结果，为nil时则使用默认呈现规则
-	ToString          func(obj reflect.Value) (objStr *string)
-	DisableMapKeySort bool
+	// FastSpecifyToStringProbe(obj)返回true时，使用ToString(obj)作为obj的字符串呈现结果
+	ToString func(obj reflect.Value) (objStr string)
+	// FastSpecifyToStringProbe(obj)需高效返回obj是否存在指定的String函数，存在时返回true
+	FastSpecifyToStringProbe func(obj reflect.Value) (hasSpecifyToString bool)
+	DisableMapKeySort        bool
 }
 
 type graph struct {
-	// config中指定reflect.Value->对应的呈现结果
-	objStrs map[reflect.Value]string
-
 	preProcessPhase bool
 
 	// key: 已经访问过的结点, value: key结点对应的编号
@@ -264,11 +266,8 @@ func (g *graph) dfs(node reflect.Value, preNode *reflect.Value) {
 // 预处理阶段对当前结点cur的处理, 仅在cur存在后继结点时返回true
 // cur.Kind()的合法值为所有reflect.Kind
 func (g *graph) handleCurObjForPreProcessPhase(cur reflect.Value) bool {
-	if cur.Kind() != reflect.Invalid && cur.CanInterface() && g.conf.ToString != nil {
-		if objStr := g.conf.ToString(cur); objStr != nil {
-			g.objStrs[cur] = *objStr
-			return false
-		}
+	if cur.Kind() != reflect.Invalid && cur.CanInterface() && g.conf.FastSpecifyToStringProbe != nil && g.conf.FastSpecifyToStringProbe(cur) {
+		return false
 	}
 
 	switch cur.Kind() {
@@ -397,11 +396,9 @@ func (g *graph) handleCurObjForFormalPhase(cur reflect.Value, preNode *reflect.V
 		}
 	}
 
-	if cur.Kind() != reflect.Invalid {
-		if objStr, inMap := g.objStrs[cur]; inMap {
-			g.buf.WriteString(objStr)
-			return false
-		}
+	if cur.Kind() != reflect.Invalid && g.conf.FastSpecifyToStringProbe != nil && g.conf.FastSpecifyToStringProbe(cur) {
+		g.buf.WriteString(g.conf.ToString(cur))
+		return false
 	}
 
 	if isBaseKind(cur.Kind()) {

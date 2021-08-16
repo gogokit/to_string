@@ -87,12 +87,14 @@ func TestToString(t *testing.T) {
 			const expectStr = `{IntSlice1:$Obj1(0-9), IntSlice2:nil, IntSlice3:$Obj1(2-4), ByteSlice:"this is byte slice!", StructSlice1:$Obj2(0-2), StructSlice2:$Obj2(1-2), StructSlice3:[], IntPtr:1, SlicePtr:<Obj3>$Obj1(0-9)}, {<Obj1>:[1(0), 2, 3(2), 4, 5(4), 6, 7, 8, 9, 10(9)], <Obj2>:[{IntSlice1:$Obj1(0-9), IntSlice2:nil, IntSlice3:$Obj1(2-4), ByteSlice:"this is byte slice!", StructSlice1:nil, StructSlice2:nil, StructSlice3:nil, IntPtr:1, SlicePtr:$Obj3}(0), {IntSlice1:$Obj1(0-9), IntSlice2:nil, IntSlice3:$Obj1(2-4), ByteSlice:"this is byte slice!", StructSlice1:nil, StructSlice2:nil, StructSlice3:nil, IntPtr:1, SlicePtr:$Obj3}(1), {IntSlice1:$Obj1(0-9), IntSlice2:nil, IntSlice3:$Obj1(2-4), ByteSlice:"this is byte slice!", StructSlice1:nil, StructSlice2:nil, StructSlice3:nil, IntPtr:1, SlicePtr:$Obj3}(2)]}`
 			for i := 1; i <= loopCnt; i++ {
 				So(StringByConf(cs, Config{
-					ToString: func(obj reflect.Value) (objStr *string) {
+					ToString: func(obj reflect.Value) (objStr string) {
 						if obj.Type() == reflect.TypeOf([]byte{}) {
-							str := strconv.Quote(string(obj.Interface().([]byte)))
-							return &str
+							return strconv.Quote(string(obj.Interface().([]byte)))
 						}
-						return nil
+						return ""
+					},
+					FastSpecifyToStringProbe: func(obj reflect.Value) (hasSpecifyToString bool) {
+						return obj.Type() == reflect.TypeOf([]byte{})
 					},
 				}), ShouldEqual, expectStr)
 			}
