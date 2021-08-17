@@ -396,7 +396,7 @@ func (g *graph) handleCurObjForFormalPhase(cur reflect.Value, preNode *reflect.V
 		}
 	}
 
-	if cur.Kind() != reflect.Invalid && g.conf.FastSpecifyToStringProbe != nil && g.conf.FastSpecifyToStringProbe(cur) {
+	if cur.Kind() != reflect.Invalid && cur.CanInterface() && g.conf.FastSpecifyToStringProbe != nil && g.conf.FastSpecifyToStringProbe(cur) {
 		g.buf.WriteString(g.conf.ToString(cur))
 		return false
 	}
