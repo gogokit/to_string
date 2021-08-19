@@ -100,6 +100,29 @@ func TestToString(t *testing.T) {
 			}
 		})
 
+		Convey("test_warn_size_callback", func() {
+			const loopCnt = 1000
+			const expectStr = `Warn: len(string) is more than 100, [Str]={IntSlice1:$Obj1(0-9), IntSlice2:nil, IntSlice3:$Obj1(2-4), ByteSlice:"this is byte slice!", StructSlice1:`
+			for i := 1; i <= loopCnt; i++ {
+				warnSize := 100
+				So(StringByConf(cs, Config{
+					ToString: func(obj reflect.Value) (objStr string) {
+						if obj.Type() == reflect.TypeOf([]byte{}) {
+							return strconv.Quote(string(obj.Interface().([]byte)))
+						}
+						return ""
+					},
+					FastSpecifyToStringProbe: func(obj reflect.Value) (hasSpecifyToString bool) {
+						return obj.Type() == reflect.TypeOf([]byte{})
+					},
+					WarnSize: &warnSize,
+					ResultSizeWarnCallback: func(str string) bool {
+						return false
+					},
+				}), ShouldEqual, expectStr)
+			}
+		})
+
 		Convey("test_map_key_sort", func() {
 			type MapKey struct {
 				Bool      bool
