@@ -9,6 +9,10 @@ import (
 	"strconv"
 )
 
+type errorSizeWarn struct {
+	str string
+}
+
 // 返回表示obj引用对象的字符串
 func String(obj interface{}) string {
 	return StringByConf(obj, Config{})
@@ -17,6 +21,10 @@ func String(obj interface{}) string {
 func StringByConf(obj interface{}, conf Config) (ret string) {
 	defer func() {
 		if err := recover(); err != nil {
+			if sizeWarn, ok := err.(errorSizeWarn); ok {
+				ret = fmt.Sprintf("Warn: len(string) is more than %d, [Str]=%s", *conf.WarnSize, sizeWarn.str)
+				return
+			}
 			ret = fmt.Sprintf("Fatal error: panic in StringByConf, [Err]=%v\n[Stack]=\n%s\n", err, debug.Stack())
 		}
 	}()
@@ -83,7 +91,11 @@ type Config struct {
 	ToString func(obj reflect.Value) (objStr string)
 	// FastSpecifyToStringProbe(obj)需高效返回obj是否存在指定的String函数，存在时返回true
 	FastSpecifyToStringProbe func(obj reflect.Value) (hasSpecifyToString bool)
-	DisableMapKeySort        bool
+	// 生成字符串的过程中，如果中途字符串的字节数超过WarnSize，则会调用ResultTooLongCallback(str)，str表示当前已经生成的字符串，返回true表示继续执行，返回false表示终止执行
+	ResultSizeWarnCallback func(str string) (shouldContine bool)
+	// 仅在非nil时表示指定警戒字节数
+	WarnSize          *int
+	DisableMapKeySort bool
 }
 
 type graph struct {
@@ -119,6 +131,10 @@ type graph struct {
 }
 
 func (g *graph) dfs(node reflect.Value, preNode *reflect.Value) {
+	if g.conf.WarnSize != nil && g.buf.Len() > *g.conf.WarnSize && (g.conf.ResultSizeWarnCallback == nil || !g.conf.ResultSizeWarnCallback(g.buf.String())) {
+		panic(errorSizeWarn{str: g.buf.String()})
+	}
+
 	switch node.Kind() {
 	case reflect.Map:
 		if g.preProcessPhase {
